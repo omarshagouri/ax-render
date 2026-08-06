@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+playwright==1.50.0
+requests
+google-auth
+google-api-python-client

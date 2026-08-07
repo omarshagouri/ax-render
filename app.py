@@ -18,6 +18,10 @@ GITHUB_TOKEN   = os.environ["GITHUB_TOKEN"]       # required
 RENDER_API_KEY = os.environ["RENDER_API_KEY"]     # required; must match Make's x-api-key
 
 app = FastAPI()
+
+from assemble_endpoint import router
+app.include_router(router)
+
 _pw = None
 _browser = None
 _render_lock = asyncio.Lock()      # one render at a time per instance (safe on one browser)

@@ -13,13 +13,13 @@ import requests
 from fastapi import FastAPI, Request, HTTPException
 from playwright.async_api import async_playwright
 
-# ---- config (env vars set at deploy) ----
+# ---- config (env vars set at deploy) ----[cite: 2]
 GH_USER   = os.environ.get("GH_USER", "omarshagouri")
 GH_REPO   = os.environ.get("GH_REPO", "ax-cards")
 GH_BRANCH = os.environ.get("GH_BRANCH", "main")
 CARDS_DIR = os.environ.get("CARDS_DIR", "Cards")
-GITHUB_TOKEN   = os.environ["GITHUB_TOKEN"]       # required
-RENDER_API_KEY = os.environ["RENDER_API_KEY"]     # required; must match Make's x-api-key
+GITHUB_TOKEN   = os.environ["GITHUB_TOKEN"]       # required[cite: 2]
+RENDER_API_KEY = os.environ["RENDER_API_KEY"]     # required; must match Make's x-api-key[cite: 2]
 
 app = FastAPI()
 
@@ -28,13 +28,13 @@ app.include_router(router)
 
 _pw = None
 _browser = None
-_render_lock = asyncio.Lock()      # one render at a time per instance (safe on one browser)
-_card_cache = {}                   # card_id -> CARD dict
-_drive = None                      # lazy Drive client (read-only), built on first /thumbnail call
+_render_lock = asyncio.Lock()      # one render at a time per instance (safe on one browser)[cite: 2]
+_card_cache = {}                   # card_id -> CARD dict[cite: 2]
+_drive = None                      # lazy Drive client (read-only), built on first /thumbnail call[cite: 2]
 BG_URI = None
-LOGO_URI = None                    # optional baked-in logo.png (fallback for /thumbnail)
+LOGO_URI = None                    # optional baked-in logo.png (fallback for /thumbnail)[cite: 2]
 
-# ---- the shared frame (identical to the Colab engine) ----
+# ---- the shared frame (identical to the Colab engine) ----[cite: 2]
 FRAME = """
 <!doctype html><html><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -55,9 +55,9 @@ FRAME = """
 </script></body></html>
 """
 
-# ---- thumbnail frame: parameterized size, seeked to a settled state
-#      (all clamp-based entrances saturated). The background/logo live in the
-#      card itself (__BG_SRC__ / __LOGO_SRC__); the stage bg is just a fallback. ----
+# ---- thumbnail frame: parameterized size, seeked to a settled state[cite: 2]
+#      (all clamp-based entrances saturated). The background/logo live in the[cite: 2]
+#      card itself (__BG_SRC__ / __LOGO_SRC__); the stage bg is just a fallback. ----[cite: 2]
 THUMB_FRAME = """
 <!doctype html><html><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -80,7 +80,7 @@ THUMB_FRAME = """
 
 @app.on_event("startup")
 async def startup():
-    """Launch Chromium once (warm), load the baked-in background and optional logo."""
+    """Launch Chromium once (warm), load the baked-in background and optional logo."""[cite: 2]
     global _pw, _browser, BG_URI, LOGO_URI
     _pw = await async_playwright().start()
     _browser = await _pw.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
@@ -88,7 +88,7 @@ async def startup():
     with open("background.png", "rb") as f:
         BG_URI = "data:image/png;base64," + base64.b64encode(f.read()).decode()
 
-    # optional fixed logo baked into the image; used by /thumbnail if no logo_file_id is sent
+    # optional fixed logo baked into the image; used by /thumbnail if no logo_file_id is sent[cite: 2]
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             LOGO_URI = "data:image/png;base64," + base64.b64encode(f.read()).decode()
@@ -100,10 +100,10 @@ async def shutdown():
     if _browser: await _browser.close()
     if _pw: await _pw.stop()
 
-# ---- Drive (read-only) ----------------------------------------------------
+# ---- Drive (read-only) ----------------------------------------------------[cite: 2]
 def _drive_client():
-    """Build a read-only Drive client from the Cloud Run service account (ADC).
-    Reads need no storage quota, so this is safe for the SA that cannot write."""
+    """Build a read-only Drive client from the Cloud Run service account (ADC).[cite: 2]
+    Reads need no storage quota, so this is safe for the SA that cannot write."""[cite: 2]
     global _drive
     if _drive is None:
         from google.auth import default as google_auth_default
@@ -113,7 +113,7 @@ def _drive_client():
     return _drive
 
 def drive_fetch_data_uri(file_id, fallback_mime="image/png"):
-    """Download a Drive file by id and return it as a data: URI for inline embedding."""
+    """Download a Drive file by id and return it as a data: URI for inline embedding."""[cite: 2]
     from googleapiclient.http import MediaIoBaseDownload
     drive = _drive_client()
     meta = drive.files().get(fileId=file_id, fields="mimeType",
@@ -127,7 +127,18 @@ def drive_fetch_data_uri(file_id, fallback_mime="image/png"):
         _, done = dl.next_chunk()
     return "data:%s;base64,%s" % (mime, base64.b64encode(buf.getvalue()).decode())
 
-# ---- cards ----------------------------------------------------------------
+def download_drive_file_to_path(file_id, dest_path):
+    """Download any Google Drive file by ID directly to a local destination path (for assembly assets like intro photos/outro videos)."""
+    from googleapiclient.http import MediaIoBaseDownload
+    drive = _drive_client()
+    req = drive.files().get_media(fileId=file_id, supportsAllDrives=True)
+    with open(dest_path, "wb") as f:
+        dl = MediaIoBaseDownload(f, req)
+        done = False
+        while not done:
+            _, done = dl.next_chunk()
+
+# ---- cards ----------------------------------------------------------------[cite: 2]
 def load_card(card_id):
     if card_id in _card_cache:
         return _card_cache[card_id]
@@ -177,7 +188,7 @@ async def render_card(card, values, duration, out_path, fps=30):
         shutil.rmtree(frames, ignore_errors=True)
 
 async def render_thumbnail(card, values, bg_uri, logo_uri, width, height, out_path):
-    """Composite one card to a single settled PNG."""
+    """Composite one card to a single settled PNG."""[cite: 2]
     html = (THUMB_FRAME.replace("__CARD_CSS__", card["css"])
                        .replace("__CARD_BODY__", card["body"])
                        .replace("__CARD_SEEK__", card.get("seek", ""))
@@ -200,7 +211,7 @@ async def render_thumbnail(card, values, bg_uri, logo_uri, width, height, out_pa
         await page.evaluate("() => document.fonts.ready")
         await page.evaluate("window.seek(999)")
         
-        # Added timeout to allow Chromium to rasterize the base64 data URIs
+        # Added timeout to allow Chromium to rasterize the base64 data URIs[cite: 2]
         await page.wait_for_timeout(500)
         
         await page.locator("#stage").screenshot(path=out_path)

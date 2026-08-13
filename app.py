@@ -177,10 +177,7 @@ async def render_card(card, values, duration, out_path, fps=30):
         shutil.rmtree(frames, ignore_errors=True)
 
 async def render_thumbnail(card, values, bg_uri, logo_uri, width, height, out_path):
-    """Composite one card to a single settled PNG. Same slot/exec engine as render_card,
-    but no ffmpeg: seek to a large t so entrances saturate, then screenshot #stage.
-    The background/logo are injected into the card's __BG_SRC__ / __LOGO_SRC__ slots
-    (VC-SF-028's convention); __BG__ / __LOGO__ kept too for any older card."""
+    """Composite one card to a single settled PNG."""
     html = (THUMB_FRAME.replace("__CARD_CSS__", card["css"])
                        .replace("__CARD_BODY__", card["body"])
                        .replace("__CARD_SEEK__", card.get("seek", ""))
@@ -206,7 +203,7 @@ async def render_thumbnail(card, values, bg_uri, logo_uri, width, height, out_pa
         # Added timeout to allow Chromium to rasterize the base64 data URIs
         await page.wait_for_timeout(500)
         
-        await page.locator("#stage").screenshot(path=out_path)   # exact stage bounds, PNG
+        await page.locator("#stage").screenshot(path=out_path)
     finally:
         await context.close()
 
@@ -224,9 +221,8 @@ async def render_beat(req: Request):
     beat     = str(body["beat"])
     card_id  = body["card_id"]
     values   = body["values"]
-    if isinstance(values, str):           # tolerate values arriving as a JSON string
+    if isinstance(values, str):
         values = json.loads(values)
-    _ = body.get("out_folder_id")  # no longer used by the service; Make handles Drive
 
     card = load_card(card_id)
     duration = parse_duration(body.get("duration"), card["default_duration"])
@@ -241,21 +237,10 @@ async def render_beat(req: Request):
         mp4_b64 = base64.b64encode(f.read()).decode()
     os.remove(out_path)
 
-    # Make decodes 'file_base64' and saves it to Drive with its own connection.
     return {"status": "ok", "filename": filename, "duration": duration, "file_base64": mp4_b64}
 
 @app.post("/thumbnail")
 async def thumbnail(req: Request):
-    """Composite a thumbnail/end-plate PNG from a card + per-video AI background (+ optional logo).
-    Body:
-      card_id             (required)  thumbnail card id in ax-cards
-      values              (required)  slot dict, e.g. {"HEADLINE":"...","SUBHEAD":"..."}
-      background_file_id  (required)  Drive id of the AI background Make generated for this video
-      logo_file_id        (optional)  Drive id of the logo; falls back to baked-in logo.png, else none
-      width / height      (optional)  default 1080 x 1920
-      output_name         (optional)  default "{card_id}_thumb.png"
-    Returns: {status, filename, file_base64}  → Make saves it to Drive with its own connection.
-    """
     if req.headers.get("x-api-key") != RENDER_API_KEY:
         raise HTTPException(401, "bad api key")
     body = await req.json()
@@ -265,7 +250,6 @@ async def thumbnail(req: Request):
     if isinstance(values, str):
         values = json.loads(values)
 
-    # allow either base64 in the body (most robust) or a Drive file id
     bg_b64 = body.get("background_base64")
     bg_file_id = body.get("background_file_id")
     if bg_b64:
@@ -278,10 +262,8 @@ async def thumbnail(req: Request):
     else:
         raise HTTPException(400, "provide background_base64 or background_file_id")
 
-    # fail loudly instead of rendering a blank navy thumbnail
     if len(bg_uri) < 2000:
-        raise HTTPException(502, f"background is empty ({len(bg_uri)} chars) — "
-                                 f"check the upstream upload actually wrote image bytes")
+        raise HTTPException(502, f"background is empty ({len(bg_uri)} chars)")
 
     logo_b64 = body.get("logo_base64")
     logo_file_id = body.get("logo_file_id")
@@ -293,9 +275,8 @@ async def thumbnail(req: Request):
         except Exception as e:
             raise HTTPException(502, f"could not read logo {logo_file_id} from Drive: {e}")
     else:
-        logo_uri = LOGO_URI   # baked-in fallback, or None if the card draws its own mark
+        logo_uri = LOGO_URI
 
-    # an empty logo would render a broken image; treat it as "no logo" so the card hides it
     if not logo_uri or len(logo_uri) < 2000:
         logo_uri = ""
 
@@ -316,5 +297,5 @@ async def thumbnail(req: Request):
         png_b64 = base64.b64encode(f.read()).decode()
     os.remove(out_path)
 
-return {"status": "ok", "filename": output_name, "file_base64": png_b64,
-        "debug": {"bg_len": len(bg_uri or ""), "logo_len": len(logo_uri or "")}}
+    return {"status": "ok", "filename": output_name, "file_base64": png_b64,
+            "debug": {"bg_len": len(bg_uri or ""), "logo_len": len(logo_uri or "")}}

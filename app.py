@@ -76,6 +76,15 @@ THUMB_FRAME = """
   window.seek(999);   // still image: settle every entrance
 </script></body></html>
 """
+html = (THUMB_FRAME.replace("__CARD_CSS__", card["css"])
+                       .replace("__CARD_BODY__", card["body"])
+                       .replace("__CARD_SEEK__", card.get("seek", ""))
+                       .replace("__BG_SRC__", bg_uri or "")
+                       .replace("__LOGO_SRC__", logo_uri or "")
+                       .replace("__BG__", bg_uri or "")
+                       .replace("__LOGO__", logo_uri or "")
+                       .replace("__W__", str(width))
+                       .replace("__H__", str(height)))
 
 @app.on_event("startup")
 async def startup():

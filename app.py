@@ -316,6 +316,5 @@ async def thumbnail(req: Request):
         png_b64 = base64.b64encode(f.read()).decode()
     os.remove(out_path)
 
-    return {"status": "ok", "filename": output_name, "file_base64": png_b64,
-            "debug": {"bg_len": len(bg_uri or ""), "logo_len": len(logo_uri or "")}}
-```[cite: 1]
+return {"status": "ok", "filename": output_name, "file_base64": png_b64,
+        "debug": {"bg_len": len(bg_uri or ""), "logo_len": len(logo_uri or "")}}

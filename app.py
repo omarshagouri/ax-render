@@ -212,7 +212,7 @@ async def render_thumbnail(card, values, bg_uri, logo_uri, width, height, out_pa
 
 @app.get("/")
 def health():
-    return {"status": "ok", "service": "ampcorex-render"}
+    return {"status": "ok", "service": "ampcorex-render", "version": "v2-base64-fix"}
 
 @app.post("/render-beat")
 async def render_beat(req: Request):

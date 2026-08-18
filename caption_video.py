@@ -50,7 +50,7 @@ RENDER_API_KEY = os.environ["RENDER_API_KEY"]           # same key as the other 
 # ---- caption style (all env-overridable so you can tune without a code change) ----
 WHISPER_MODEL   = os.environ.get("CAPTION_WHISPER_MODEL", "base.en")   # baked into the image
 FONT_NAME       = os.environ.get("CAPTION_FONT", "Montserrat ExtraBold")
-FONT_SIZE       = int(os.environ.get("CAPTION_FONT_SIZE", "108"))      # at 1080x1920
+FONT_SIZE       = int(os.environ.get("CAPTION_FONT_SIZE", "90"))      # at 1080x1920
 COLOR_WHITE_HEX = os.environ.get("CAPTION_WHITE", "FFFFFF")
 COLOR_TEAL_HEX  = os.environ.get("CAPTION_TEAL",  "5EEAD4")            # brand teal (active word)
 OUTLINE_PX      = os.environ.get("CAPTION_OUTLINE", "6")
@@ -58,7 +58,7 @@ SHADOW_PX       = os.environ.get("CAPTION_SHADOW", "3")
 ALIGN           = os.environ.get("CAPTION_ALIGN", "2")                 # 2 = bottom-centre (lower third)
 MARGIN_V        = int(os.environ.get("CAPTION_MARGIN_V", "340"))       # px up from the bottom edge
 MARGIN_H        = int(os.environ.get("CAPTION_MARGIN_H", "80"))        # left/right safe margin
-MAX_WORDS       = int(os.environ.get("CAPTION_MAX_WORDS", "2"))        # words visible per group
+MAX_WORDS       = int(os.environ.get("CAPTION_MAX_WORDS", "3"))        # words visible per group
 MAX_CHARS       = int(os.environ.get("CAPTION_MAX_CHARS", "14"))       # start a new group past this
 CHAR_W          = float(os.environ.get("CAPTION_CHAR_W", "0.66"))      # est. glyph width / font size (autofit)
 UPPERCASE       = os.environ.get("CAPTION_UPPERCASE", "1") == "1"

@@ -56,7 +56,7 @@ COLOR_TEAL_HEX  = os.environ.get("CAPTION_TEAL",  "5EEAD4")            # brand t
 OUTLINE_PX      = os.environ.get("CAPTION_OUTLINE", "6")
 SHADOW_PX       = os.environ.get("CAPTION_SHADOW", "3")
 ALIGN           = os.environ.get("CAPTION_ALIGN", "2")                 # 2 = bottom-centre (lower third)
-MARGIN_V        = int(os.environ.get("CAPTION_MARGIN_V", "430"))       # px up from the bottom edge
+MARGIN_V        = int(os.environ.get("CAPTION_MARGIN_V", "340"))       # px up from the bottom edge
 MARGIN_H        = int(os.environ.get("CAPTION_MARGIN_H", "80"))        # left/right safe margin
 MAX_WORDS       = int(os.environ.get("CAPTION_MAX_WORDS", "2"))        # words visible per group
 MAX_CHARS       = int(os.environ.get("CAPTION_MAX_CHARS", "14"))       # start a new group past this

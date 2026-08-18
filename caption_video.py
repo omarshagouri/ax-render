@@ -62,8 +62,8 @@ MAX_WORDS       = int(os.environ.get("CAPTION_MAX_WORDS", "2"))        # words v
 MAX_CHARS       = int(os.environ.get("CAPTION_MAX_CHARS", "14"))       # start a new group past this
 CHAR_W          = float(os.environ.get("CAPTION_CHAR_W", "0.66"))      # est. glyph width / font size (autofit)
 UPPERCASE       = os.environ.get("CAPTION_UPPERCASE", "1") == "1"
-OUTRO_TAIL_S    = float(os.environ.get("CAPTION_OUTRO_TAIL_S", "0"))   # secs at the END left uncaptioned (outro clip)
-INTRO_HEAD_S    = float(os.environ.get("CAPTION_INTRO_HEAD_S", "0"))   # secs at the START left uncaptioned (logo intro)
+OUTRO_TAIL_S    = float(os.environ.get("CAPTION_OUTRO_TAIL_S", "6"))   # secs at the END left uncaptioned (outro clip)
+INTRO_HEAD_S    = float(os.environ.get("CAPTION_INTRO_HEAD_S", "1"))   # secs at the START left uncaptioned (logo intro)
 
 _PLAY_W, _PLAY_H = 1080, 1920
 _model = None                                                           # lazy-loaded whisper model

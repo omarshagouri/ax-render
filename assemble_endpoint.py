@@ -95,7 +95,8 @@ def _build(video_id, folder_id, beats_in, chapters_in,
                 raise HTTPException(422, f"clip not found in folder: {fname} "
                                          f"(have: {sorted(clip_index)[:20]})")
             clip = _download(svc, fid, os.path.join(work, fname))
-            m_beats.append({"beat": int(b["beat"]), "clip": clip, "chapter": ch})
+            m_beats.append({"beat": int(b["beat"]), "clip": clip, "chapter": ch,
+                            "card_id": b["card_id"].strip()})
 
         m_chaps = []
         for c in chapters_in:

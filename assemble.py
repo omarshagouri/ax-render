@@ -10,10 +10,26 @@ V1.2 (outro audio fix):
     no copy-concat AAC drop). Body/intro pipeline is unchanged.
 Both intro and outro are optional: absent -> assembles exactly as before.
 """
-import json, os, subprocess, tempfile, shutil
+import json, os, re, subprocess, tempfile, shutil
 
 INTRO_DUR = 1.0                 # seconds; the still intro photo is silent
 INTRO_PAD_COLOR = "0x0A1628"    # brand navy letterbox if a source isn't 9:16
+
+# How a CLIP beat (VV-SF-###) fills a slot longer than its native length.
+# Cards (VC-SF-###) still clone their last frame (intended "hold"); clips never freeze.
+#   loop  -> repeat the footage to cover the slot, hard-cut at target (default)
+#   slow  -> stretch one playthrough to the slot (no seam); falls back to loop past SLOW_MAX
+CLIP_FILL = os.environ.get("CLIP_FILL_MODE", "loop").strip().lower()
+SLOW_MAX  = float(os.environ.get("CLIP_SLOW_MAX", "2.5"))   # max stretch factor before loop fallback
+
+def is_clip_beat(card_id=None, path=None):
+    """VV-SF-### = stock B-roll (motion, must not freeze); VC-SF-### = card (holds).
+    Prefer the explicit card_id; otherwise recover it from the beat filename."""
+    tag = (card_id or "").strip().upper()
+    if not tag and path:
+        m = re.search(r"_BEAT_\d+_([A-Z]{2}-[A-Z]{2}-\d+)", os.path.basename(path).upper())
+        tag = m.group(1) if m else ""
+    return tag.startswith("VV-")
 
 def _run(cmd):
     r = subprocess.run(cmd, capture_output=True, text=True)
@@ -32,19 +48,37 @@ def has_audio_stream(path):
                 "-show_entries","stream=index","-of","csv=p=0", path])
     return bool(out.strip())
 
-def norm_beat(src, target, work, idx):
-    """Re-encode a silent beat clip to exactly `target` seconds, 1080x1920@30, yuv420p."""
+def norm_beat(src, target, work, idx, is_clip=False):
+    """Re-encode a silent beat to exactly `target` seconds, 1080x1920@30, yuv420p.
+
+    A card fills a longer slot by cloning its last frame (its designed "hold").
+    A CLIP must never freeze: it fills the slot with continuous motion instead —
+    looped by default, or slowed to one playthrough if CLIP_FILL_MODE=slow.
+    target <= native (within one frame) always just trims, for clips and cards alike."""
     d = probe_dur(src); dst = os.path.join(work, f"v_{idx:03d}.mp4")
     pad = round(target - d, 3)
-    vf = "scale=1080:1920:force_original_aspect_ratio=decrease,"\
-         "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p"
-    if pad > 0.02:
-        vf += f",tpad=stop_mode=clone:stop_duration={pad}"
-        _run(["ffmpeg","-y","-i",src,"-vf",vf,"-an","-c:v","libx264",
-              "-preset","veryfast","-r","30",dst])
-    else:
+    vf = ("scale=1080:1920:force_original_aspect_ratio=decrease,"
+          "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p")
+
+    if pad <= 0.02:
+        # slot <= native: trim to target (unchanged behaviour, safe for clips and cards)
         _run(["ffmpeg","-y","-i",src,"-t",f"{target:.3f}","-vf",vf,"-an",
               "-c:v","libx264","-preset","veryfast","-r","30",dst])
+    elif not is_clip:
+        # CARD: clone the last frame to hold the slot (intended, unchanged)
+        _run(["ffmpeg","-y","-i",src,"-vf",vf+f",tpad=stop_mode=clone:stop_duration={pad}",
+              "-an","-c:v","libx264","-preset","veryfast","-r","30",dst])
+    elif CLIP_FILL == "slow" and d > 0 and (target / d) <= SLOW_MAX:
+        # CLIP (slow): stretch a single playthrough to fill the slot — continuous, no seam
+        factor = target / d
+        _run(["ffmpeg","-y","-i",src,"-t",f"{target:.3f}",
+              "-vf",f"setpts={factor:.6f}*PTS,"+vf,"-an",
+              "-c:v","libx264","-preset","veryfast","-r","30",dst])
+    else:
+        # CLIP (loop; also the slow fallback when the stretch would be too extreme):
+        # repeat the footage to cover the slot, hard-cut at target. No frozen tail.
+        _run(["ffmpeg","-y","-stream_loop","-1","-i",src,"-t",f"{target:.3f}",
+              "-vf",vf,"-an","-c:v","libx264","-preset","veryfast","-r","30",dst])
     return dst
 
 def norm_photo(src, target, work, idx, pad_color=INTRO_PAD_COLOR):
@@ -101,7 +135,8 @@ def concat(parts, work, name, copy=True):
 
 def assemble(manifest, work, out_path):
     """manifest = {
-        'beats':   [{'beat':1,'clip':<path>,'chapter':1}, ... 'chapter':None for sting],
+        'beats':   [{'beat':1,'clip':<path>,'chapter':1,'card_id':'VC-SF-004'}, ...
+                    'chapter':None for sting; 'card_id' optional (falls back to filename)],
         'chapters':[{'chapter':1,'mp3':<path>}, ...],  # in order
         'intro_photo': <path or None>,   # optional: 1s silent still at the very start
         'outro_video': <path or None>,   # optional: end clip that keeps its own audio
@@ -129,7 +164,8 @@ def assemble(manifest, work, out_path):
         for b in bs: beat_target[b["beat"]] = round(probe_dur(b["clip"])*30)/30*scale
 
     for b in beats:
-        v_parts.append(norm_beat(b["clip"], beat_target[b["beat"]], work, vi)); vi+=1
+        clip_beat = is_clip_beat(b.get("card_id"), b["clip"])
+        v_parts.append(norm_beat(b["clip"], beat_target[b["beat"]], work, vi, is_clip=clip_beat)); vi+=1
         ch = ckey(b["chapter"])
         if ch is None:
             a_parts.append(norm_audio(None, work, ai, silence_dur=beat_target[b["beat"]])); ai+=1

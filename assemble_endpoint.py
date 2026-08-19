@@ -83,9 +83,16 @@ def _build(video_id, folder_id, beats_in, chapters_in,
 
         m_beats, last_ch = [], None
         for b in beats_in:
-            ch = _chapter_for(b.get("sentence"), chapters_in)
-            if ch is None and _norm(b.get("sentence")):    # non-empty but unmatched -> inherit
-                ch = last_ch
+            # Prefer an explicit chapter (cadence skeleton sends it; cells may be
+            # partial sentences that substring-matching can't resolve). Fall back
+            # to the sentence->chapter substring match for older callers.
+            explicit = b.get("chapter")
+            if explicit not in (None, "", 0, "0"):
+                ch = int(explicit)
+            else:
+                ch = _chapter_for(b.get("sentence"), chapters_in)
+                if ch is None and _norm(b.get("sentence")):   # non-empty but unmatched -> inherit
+                    ch = last_ch
             if ch is not None:
                 last_ch = ch
             nn = f"{int(b['beat']):02d}"

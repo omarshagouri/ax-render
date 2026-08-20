@@ -317,7 +317,7 @@ async def render_beat(req: Request):
     #      to a card beat, so downstream save + assembly need no change ----------
     if card_id.upper().startswith("VV-"):
         duration = parse_duration(body.get("duration"), 3.0)
-        filename = f"{video_id}_beat_{beat.zfill(2)}_{card_id}.mp4"
+        filename = f"{video_id}_beat_{beat.zfill(2)}_{card_id}"
         out_path = f"/tmp/{filename}"
         async with _render_lock:
             await render_clip(card_id, duration, out_path,

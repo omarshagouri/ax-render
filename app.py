@@ -33,6 +33,8 @@ app.include_router(caption_router)
 from cadence_endpoint import router as cadence_router
 app.include_router(cadence_router)
 
+from finish_endpoint import router as finish_router
+app.include_router(finish_router)
 _pw = None
 _browser = None
 _render_lock = asyncio.Lock()      # one render at a time per instance (safe on one browser)

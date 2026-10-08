@@ -1,5 +1,5 @@
 # ============================================================
-# AmpCoreX render service  —  Cloud Run
+# AX render service  —  Cloud Run
 # Endpoints:
 #   POST /render-beat      → renders one card to MP4 (base64)
 #   POST /thumbnail        → composites one card to a still PNG (base64)
@@ -300,7 +300,7 @@ async def render_thumbnail(card, values, bg_uri, logo_uri, width, height, out_pa
 
 @app.get("/")
 def health():
-    return {"status": "ok", "service": "ampcorex-render", "version": "v3-clips"}
+    return {"status": "ok", "service": "ax-render", "version": "v3-clips"}
 
 @app.post("/render-beat")
 async def render_beat(req: Request):

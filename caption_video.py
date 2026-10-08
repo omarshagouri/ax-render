@@ -1,4 +1,4 @@
-"""AmpCoreX Agent 9 — /caption-video endpoint (FastAPI, matches ax-render's app.py).
+"""AX Agent 9 — /caption-video endpoint (FastAPI, matches ax-render's app.py).
 
 Burns karaoke-style captions (active word teal, rest white, heavy outline) onto the
 assembled {ID}_FINAL.mp4 and returns the captioned MP4 + a sidecar .srt as base64.

@@ -1,4 +1,4 @@
-"""AmpCoreX — /finish-video endpoint (FastAPI, part of ax-render).
+"""AX — /finish-video endpoint (FastAPI, part of ax-render).
 
 The NEW ax-video renderer outputs ONE {ID}_render.mp4 (cards + narration, audio
 baked in). This endpoint does NOT re-stitch beats. It only WRAPS that finished

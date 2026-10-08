@@ -1,4 +1,4 @@
-"""AmpCoreX — /plan-cadence endpoint (FastAPI, matches ax-render's app.py).
+"""AX — /plan-cadence endpoint (FastAPI, matches ax-render's app.py).
 
 Register in app.py with two lines after `app = FastAPI()`:
     from cadence_endpoint import router as cadence_router

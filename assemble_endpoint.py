@@ -1,4 +1,4 @@
-"""AmpCoreX Agent 8 — /assemble-video endpoint (FastAPI, matches ax-render's app.py).
+"""AX Agent 8 — /assemble-video endpoint (FastAPI, matches ax-render's app.py).
 
 Register it in app.py with TWO lines, right after `app = FastAPI()`:
 
@@ -8,7 +8,7 @@ Register it in app.py with TWO lines, right after `app = FastAPI()`:
 Add to requirements.txt:  google-api-python-client   google-auth
 
 Auth: uses the Cloud Run runtime service account for Drive READ. That SA
-(ax-render@ampcorex.iam.gserviceaccount.com) needs at least Viewer on the
+(the renderer service account) needs at least Viewer on the
 "Agents Video" folder tree. The final MP4 comes back as base64 and Make saves it.
 
 Contract (Make -> service), same x-api-key header as /render-beat:

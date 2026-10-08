@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AmpCoreX cadence engine (deterministic, transport-agnostic).
+"""AX cadence engine (deterministic, transport-agnostic).
 
 Turns REAL measured chapter audio into a beat skeleton where every beat (visual
 cell) lasts <= CAP seconds, so the screen is guaranteed to change on a fixed
@@ -7,7 +7,7 @@ retention cadence. This replaces LLM/byte-estimate durations as the planning
 input: the arithmetic (how many cells, how long, which words) lives here; the
 Visual Plan agent only chooses the visual for each pre-sized cell.
 
-Cadence rule (AmpCoreX Shorts):  TARGET 3.0s  |  HARD CAP 4.0s  |  FLOOR 1.5s
+Cadence rule (AX Shorts):  TARGET 3.0s  |  HARD CAP 4.0s  |  FLOOR 1.5s
   - No cell may exceed CAP (the retention invariant).
   - Cells aim for TARGET and never fall below FLOOR unless the whole chapter is
     shorter than FLOOR (nothing can be done then).

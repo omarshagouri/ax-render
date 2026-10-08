@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AmpCoreX Agent 8 assembly core (transport-agnostic).
+"""AX Agent 8 assembly core (transport-agnostic).
 Per-chapter audio-master + proportional tail-freeze. Pure ffmpeg.
 
 V1.2 (outro audio fix):

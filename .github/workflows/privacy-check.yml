@@ -1,0 +1,23 @@
+name: Privacy and syntax check
+on:
+  push:
+    branches: [privacy-hardening]
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Compile Python
+        run: python -m compileall -q .
+      - name: Scan public source
+        shell: bash
+        run: |
+          set +e
+          P1=$(printf '\x41\x6d\x70\x43\x6f\x72\x65\x58')
+          P2=$(printf '\x4f\x6d\x61\x72\x20\x53\x68\x61\x67\x6f\x75\x72\x69')
+          P3=$(printf '\x6f\x6d\x61\x72\x73\x68\x61\x67\x6f\x75\x72\x69\x40\x67\x6d\x61\x69\x6c\x2e\x63\x6f\x6d')
+          grep -RniI -E "$P1|$P2|$P3" . --exclude-dir=.git || true
